@@ -1,7 +1,8 @@
 import express, {NextFunction, Request, RequestHandler, Response, Router} from 'express';
 import {ApiEndpoint, ApiRequest, ApiResponse} from '../api/types';
-import {testEndpoint} from '../api/testEndpoint';
-import {secondTestEndpoint} from "../api/secondTestEndpoint";
+import {getWeatherEndpoint} from "../api/weather/getWeatherEndpoint";
+import {searchCitiesEndpoint} from "../api/weather/searchCitiesEndpoint";
+import {getWeatherByCoordinatesEndpoint} from "../api/weather/getWeatherByCoordinatesEndpoint";
 
 export default class ApiManager {
     private static instance: ApiManager;
@@ -15,8 +16,9 @@ export default class ApiManager {
     }
 
     private registerEndpoints() {
-        this.addEndpoint(testEndpoint);
-        this.addEndpoint(secondTestEndpoint);
+        this.addEndpoint(getWeatherEndpoint);
+        this.addEndpoint(searchCitiesEndpoint);
+        this.addEndpoint(getWeatherByCoordinatesEndpoint);
     }
 
     private setupMiddleware() {
