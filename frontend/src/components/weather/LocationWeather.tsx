@@ -6,7 +6,7 @@ import {clearError, getCurrentLocationWeather} from '../../store/slices/weatherS
 
 export const LocationWeather: React.FC = () => {
   const dispatch = useAppDispatch()
-  const { currentLocationWeather, loadingLocation, error } = useAppSelector((state) => state.weather)
+  const { currentLocationWeather, loadingLocation, error, currentLocation } = useAppSelector((state) => state.weather)
 
   useEffect(() => {
     dispatch(getCurrentLocationWeather())
@@ -44,7 +44,15 @@ export const LocationWeather: React.FC = () => {
   }
 
   if (currentLocationWeather) {
-    return <WeatherCard weather={currentLocationWeather} />
+    return (
+      <WeatherCard 
+        weather={currentLocationWeather} 
+        coordinates={currentLocation ? { 
+          lat: currentLocation.latitude, 
+          lon: currentLocation.longitude 
+        } : undefined}
+      />
+    )
   }
 
   return (

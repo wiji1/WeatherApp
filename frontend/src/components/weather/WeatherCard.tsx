@@ -1,17 +1,78 @@
-import React from 'react'
-import {Card} from '../ui'
+import React, {useEffect, useState} from 'react'
+import {Card, StarButton} from '../ui'
+import {useAppDispatch, useAppSelector} from '../../hooks'
+import {addFavorite, checkIsFavorite} from '../../store/slices/favoritesSlice'
 import type {WeatherData} from '../../types'
 
 interface WeatherCardProps {
   weather: WeatherData
   cityName?: string
+  coordinates?: { lat: number; lon: number }
+  showStar?: boolean
 }
 
-export const WeatherCard: React.FC<WeatherCardProps> = ({ weather, cityName }) => {
+export const WeatherCard: React.FC<WeatherCardProps> = ({ 
+  weather, 
+  cityName, 
+  coordinates,
+  showStar = true 
+}) => {
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [checkingFavorite, setCheckingFavorite] = useState(false)
+  
+  const dispatch = useAppDispatch()
+  const { isLoading } = useAppSelector((state) => state.favorites)
+  const { isAuthenticated } = useAppSelector((state) => state.auth)
+
+  useEffect(() => {
+    if (coordinates && isAuthenticated && showStar) {
+      setCheckingFavorite(true)
+      dispatch(checkIsFavorite(coordinates))
+        .unwrap()
+        .then(setIsFavorite)
+        .catch(() => setIsFavorite(false))
+        .finally(() => setCheckingFavorite(false))
+    }
+  }, [coordinates, dispatch, isAuthenticated, showStar])
+
+  const handleStarClick = async () => {
+    if (!coordinates) return
+
+    try {
+      if (isFavorite) {
+        // For removal, we need to find the favorite first
+        // This is a limitation - we'll handle this better in the favorites gallery
+        // For now, just show a message or implement a different approach
+        console.log('Remove favorite - need to implement with favorite ID')
+        // TODO: Implement proper removal logic
+      } else {
+        await dispatch(addFavorite({
+          cityName: cityName || weather.city,
+          country: weather.country,
+          latitude: coordinates.lat,
+          longitude: coordinates.lon
+        })).unwrap()
+        setIsFavorite(true)
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+    }
+  }
+
   return (
-    <Card className="max-w-md mx-auto">
+    <Card className="max-w-md mx-auto relative">
+      {showStar && coordinates && isAuthenticated && (
+        <div className="absolute top-4 right-4">
+          <StarButton
+            isFavorite={isFavorite}
+            isLoading={isLoading || checkingFavorite}
+            onClick={handleStarClick}
+          />
+        </div>
+      )}
+      
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2 pr-12">
           {cityName || weather.city}, {weather.country}
         </h2>
         <div className="text-5xl font-bold text-blue-600 mb-2">

@@ -1,13 +1,14 @@
 import React from 'react'
 import {Layout} from '../components/layout'
 import {CitySearch, LocationWeather, WeatherCard} from '../components/weather'
+import {FavoritesGallery} from '../components/favorites'
 import {ErrorMessage} from '../components/ui'
 import {useAppDispatch, useAppSelector} from '../hooks'
 import {clearError, clearSearchedCityWeather} from '../store/slices/weatherSlice'
 
 export const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch()
-  const { error, searchedCityWeather } = useAppSelector((state) => state.weather)
+  const { error, searchedCityWeather, searchedCityCoords } = useAppSelector((state) => state.weather)
 
   const handleDismissError = () => {
     dispatch(clearError())
@@ -15,7 +16,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Weather Dashboard
@@ -29,7 +30,13 @@ export const Dashboard: React.FC = () => {
           <ErrorMessage message={error} onDismiss={handleDismissError} />
         )}
 
-        <div className="space-y-6">
+        {/* Favorites Gallery */}
+        <div className="mb-12">
+          <FavoritesGallery />
+        </div>
+
+        {/* Weather Search and Current Location */}
+        <div className="max-w-2xl mx-auto space-y-6">
           <CitySearch />
           
           <div className="border-t border-gray-200 pt-6">
@@ -46,7 +53,10 @@ export const Dashboard: React.FC = () => {
                     Back to Your Location
                   </button>
                 </div>
-                <WeatherCard weather={searchedCityWeather} />
+                <WeatherCard 
+                  weather={searchedCityWeather} 
+                  coordinates={searchedCityCoords || undefined}
+                />
               </div>
             ) : (
               <div>

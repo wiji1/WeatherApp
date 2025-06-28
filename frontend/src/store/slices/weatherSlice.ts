@@ -4,6 +4,7 @@ import type {CitySearchResult, GeolocationCoords, WeatherData} from '../../types
 interface WeatherState {
   currentLocationWeather: WeatherData | null
   searchedCityWeather: WeatherData | null
+  searchedCityCoords: { lat: number; lon: number } | null
   searchResults: CitySearchResult[]
   loadingLocation: boolean
   loadingSearch: boolean
@@ -14,6 +15,7 @@ interface WeatherState {
 const initialState: WeatherState = {
   currentLocationWeather: null,
   searchedCityWeather: null,
+  searchedCityCoords: null,
   searchResults: [],
   loadingLocation: false,
   loadingSearch: false,
@@ -126,6 +128,7 @@ const weatherSlice = createSlice({
     },
     clearSearchedCityWeather: (state) => {
       state.searchedCityWeather = null
+      state.searchedCityCoords = null
     },
     setCurrentLocation: (state, action: PayloadAction<GeolocationCoords>) => {
       state.currentLocation = action.payload
@@ -166,6 +169,7 @@ const weatherSlice = createSlice({
       .addCase(fetchSearchedCityWeather.fulfilled, (state, action) => {
         state.loadingSearch = false
         state.searchedCityWeather = action.payload
+        state.searchedCityCoords = action.meta.arg
         state.searchResults = []
         state.error = null
       })

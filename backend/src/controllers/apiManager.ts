@@ -3,6 +3,14 @@ import {ApiEndpoint, ApiRequest, ApiResponse} from '../api/types';
 import {getWeatherEndpoint} from "../api/weather/getWeatherEndpoint";
 import {searchCitiesEndpoint} from "../api/weather/searchCitiesEndpoint";
 import {getWeatherByCoordinatesEndpoint} from "../api/weather/getWeatherByCoordinatesEndpoint";
+import {registerEndpoint} from "../api/auth/registerEndpoint";
+import {loginEndpoint} from "../api/auth/loginEndpoint";
+import {meEndpoint} from "../api/auth/meEndpoint";
+import {authenticateToken} from "../middleware/auth";
+import {addFavoriteEndpoint} from "../api/favorites/addFavoriteEndpoint";
+import {removeFavoriteEndpoint} from "../api/favorites/removeFavoriteEndpoint";
+import {getFavoritesEndpoint} from "../api/favorites/getFavoritesEndpoint";
+import {checkFavoriteEndpoint} from "../api/favorites/checkFavoriteEndpoint";
 
 export default class ApiManager {
     private static instance: ApiManager;
@@ -19,6 +27,17 @@ export default class ApiManager {
         this.addEndpoint(getWeatherEndpoint);
         this.addEndpoint(searchCitiesEndpoint);
         this.addEndpoint(getWeatherByCoordinatesEndpoint);
+        
+        // Auth endpoints
+        this.router.post('/api/auth/register', registerEndpoint);
+        this.router.post('/api/auth/login', loginEndpoint);
+        this.router.get('/api/auth/me', authenticateToken, meEndpoint);
+        
+        // Favorites endpoints
+        this.router.post('/api/favorites', authenticateToken, addFavoriteEndpoint);
+        this.router.delete('/api/favorites/:favoriteId', authenticateToken, removeFavoriteEndpoint);
+        this.router.get('/api/favorites', authenticateToken, getFavoritesEndpoint);
+        this.router.get('/api/favorites/check', authenticateToken, checkFavoriteEndpoint);
     }
 
     private setupMiddleware() {
