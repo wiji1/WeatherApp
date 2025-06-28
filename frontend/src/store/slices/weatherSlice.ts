@@ -1,6 +1,8 @@
 import {createAsyncThunk, createSlice, type PayloadAction} from '@reduxjs/toolkit'
 import type {CitySearchResult, GeolocationCoords, WeatherData} from '../../types'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
 interface WeatherState {
   currentLocationWeather: WeatherData | null
   searchedCityWeather: WeatherData | null
@@ -31,7 +33,7 @@ export const searchCities = createAsyncThunk(
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/weather/search?query=${encodeURIComponent(query)}`)
+      const response = await fetch(`${API_BASE_URL}/api/weather/search?query=${encodeURIComponent(query)}`)
       const data = await response.json()
       
       if (data.success) {
@@ -49,7 +51,7 @@ export const fetchWeatherByCoordinates = createAsyncThunk(
   'weather/fetchByCoordinates',
   async ({ lat, lon }: { lat: number; lon: number }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/weather/coordinates?lat=${lat}&lon=${lon}`)
+      const response = await fetch(`${API_BASE_URL}/api/weather/coordinates?lat=${lat}&lon=${lon}`)
       const data = await response.json()
       
       if (data.success) {
@@ -67,7 +69,7 @@ export const fetchSearchedCityWeather = createAsyncThunk(
   'weather/fetchSearchedCity',
   async ({ lat, lon }: { lat: number; lon: number }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/weather/coordinates?lat=${lat}&lon=${lon}`)
+      const response = await fetch(`${API_BASE_URL}/api/weather/coordinates?lat=${lat}&lon=${lon}`)
       const data = await response.json()
       
       if (data.success) {

@@ -28,7 +28,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return null // App component will handle showing AuthPage
+    return null;
   }
 
   return <>{children}</>

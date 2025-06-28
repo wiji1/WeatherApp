@@ -31,13 +31,13 @@ export interface AuthResponse {
   token: string
 }
 
-const API_BASE_URL = 'http://localhost:3001/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 export const login = createAsyncThunk<AuthResponse, LoginCredentials>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,8 +51,8 @@ export const login = createAsyncThunk<AuthResponse, LoginCredentials>(
       }
 
       const data = await response.json()
-      localStorage.setItem('token', data.token)
-      return data
+      localStorage.setItem('token', data.data.token)
+      return data.data
     } catch (error) {
       return rejectWithValue('Network error')
     }
@@ -63,7 +63,7 @@ export const register = createAsyncThunk<AuthResponse, RegisterData>(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,8 +77,8 @@ export const register = createAsyncThunk<AuthResponse, RegisterData>(
       }
 
       const data = await response.json()
-      localStorage.setItem('token', data.token)
-      return data
+      localStorage.setItem('token', data.data.token)
+      return data.data
     } catch (error) {
       return rejectWithValue('Network error')
     }
@@ -94,7 +94,7 @@ export const getCurrentUser = createAsyncThunk<User, void>(
         return rejectWithValue('No token found')
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -106,7 +106,7 @@ export const getCurrentUser = createAsyncThunk<User, void>(
       }
 
       const data = await response.json()
-      return data.user
+      return data.data.user
     } catch (error) {
       localStorage.removeItem('token')
       return rejectWithValue('Network error')

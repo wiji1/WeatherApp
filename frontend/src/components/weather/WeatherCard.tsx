@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {Card, StarButton} from '../ui'
 import {useAppDispatch, useAppSelector} from '../../hooks'
-import {addFavorite, checkIsFavorite} from '../../store/slices/favoritesSlice'
+import {addFavorite, checkIsFavorite, removeFavoriteByCoordinates} from '../../store/slices/favoritesSlice'
 import type {WeatherData} from '../../types'
 
 interface WeatherCardProps {
@@ -40,11 +40,11 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
 
     try {
       if (isFavorite) {
-        // For removal, we need to find the favorite first
-        // This is a limitation - we'll handle this better in the favorites gallery
-        // For now, just show a message or implement a different approach
-        console.log('Remove favorite - need to implement with favorite ID')
-        // TODO: Implement proper removal logic
+        await dispatch(removeFavoriteByCoordinates({
+          lat: coordinates.lat,
+          lon: coordinates.lon
+        })).unwrap()
+        setIsFavorite(false)
       } else {
         await dispatch(addFavorite({
           cityName: cityName || weather.city,

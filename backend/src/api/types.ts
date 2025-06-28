@@ -1,11 +1,10 @@
 import {Request, Response} from 'express';
-import {Types} from "mongoose";
 
 export interface ApiRequest<TReq> extends Request {
     body: TReq;
     auth?: {
-        authId: Types.ObjectId;
-        userId?: Types.ObjectId;
+        authId: string;
+        userId?: string;
     };
     user?: any;
 }

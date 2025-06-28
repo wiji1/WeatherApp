@@ -1,29 +1,30 @@
-import {Response} from 'express';
-import {AuthenticatedRequest} from '../../middleware/auth';
-import {FavoritesService} from '../../services/FavoritesService';
+import {AuthType, createEndpointStrict} from "../types";
+import {z} from "zod";
+import {FavoritesService} from "../../services/FavoritesService";
 
-export const removeFavoriteEndpoint = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
-    const { favoriteId } = req.params;
-    
-    if (!favoriteId) {
-      res.status(400).json({ success: false, error: 'Favorite ID is required' });
-      return;
-    }
+const removeFavoriteSchema = z.object({
+  favoriteId: z.string().min(1)
+}).strict();
+
+export interface RemoveFavoriteRequest {
+  favoriteId: string;
+}
+
+export interface RemoveFavoriteResponse {
+  message: string;
+}
+
+export const removeFavoriteEndpoint = createEndpointStrict<RemoveFavoriteRequest, RemoveFavoriteResponse>((validate, data) => ({
+  path: '/favorites/:favoriteId',
+  method: 'delete',
+  auth: AuthType.Basic,
+  validator: removeFavoriteSchema,
+  handler: async (req, _res) => {
+    const requestData = data(req.params);
     
     const favoritesService = new FavoritesService();
-    await favoritesService.removeFavorite(req.userId!, favoriteId);
+    await favoritesService.removeFavorite(req.auth!.userId!, requestData.favoriteId);
     
-    res.json({ success: true, message: 'Favorite removed successfully' });
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Favorite not found') {
-        res.status(404).json({ success: false, error: error.message });
-        return;
-      }
-    }
-    
-    console.error('Remove favorite error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    return validate({ message: 'Favorite removed successfully' });
   }
-};
+}));

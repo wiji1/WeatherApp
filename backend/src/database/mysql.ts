@@ -58,7 +58,6 @@ export class MySQLDatabase {
 
   public async initializeTables(): Promise<void> {
     try {
-      // Create users table
       await this.query(`
         CREATE TABLE IF NOT EXISTS users (
           id VARCHAR(36) PRIMARY KEY,
@@ -69,7 +68,6 @@ export class MySQLDatabase {
         )
       `);
 
-      // Create favorites table
       await this.query(`
         CREATE TABLE IF NOT EXISTS favorites (
           id VARCHAR(36) PRIMARY KEY,

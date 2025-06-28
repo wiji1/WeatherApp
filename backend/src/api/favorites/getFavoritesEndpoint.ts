@@ -1,15 +1,20 @@
-import {Response} from 'express';
-import {AuthenticatedRequest} from '../../middleware/auth';
-import {FavoritesService} from '../../services/FavoritesService';
+import {AuthType, createEndpointStrict} from "../types";
+import {z} from "zod";
+import {FavoritesService} from "../../services/FavoritesService";
 
-export const getFavoritesEndpoint = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
+const getFavoritesSchema = z.object({}).strict();
+
+export interface GetFavoritesResponse extends Array<any> {}
+
+export const getFavoritesEndpoint = createEndpointStrict<unknown, GetFavoritesResponse>((validate, data) => ({
+  path: '/favorites',
+  method: 'get',
+  auth: AuthType.Basic,
+  validator: getFavoritesSchema,
+  handler: async (req, _res) => {
     const favoritesService = new FavoritesService();
-    const favorites = await favoritesService.getUserFavoritesWithWeather(req.userId!);
+    const favorites = await favoritesService.getUserFavoritesWithWeather(req.auth!.userId!);
     
-    res.json({ success: true, data: favorites });
-  } catch (error) {
-    console.error('Get favorites error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    return validate(favorites);
   }
-};
+}));

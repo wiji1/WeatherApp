@@ -1,30 +1,32 @@
-import {Response} from 'express';
-import {AuthenticatedRequest} from '../../middleware/auth';
-import {FavoritesService} from '../../services/FavoritesService';
+import {AuthType, createEndpointStrict} from "../types";
+import {z} from "zod";
+import {FavoritesService} from "../../services/FavoritesService";
 
-export const checkFavoriteEndpoint = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
-    const { lat, lon } = req.query;
-    
-    if (!lat || !lon) {
-      res.status(400).json({ success: false, error: 'Latitude and longitude are required' });
-      return;
-    }
-    
-    const latitude = parseFloat(lat as string);
-    const longitude = parseFloat(lon as string);
-    
-    if (isNaN(latitude) || isNaN(longitude)) {
-      res.status(400).json({ success: false, error: 'Invalid latitude or longitude' });
-      return;
-    }
+const checkFavoriteSchema = z.object({
+  lat: z.coerce.number().min(-90).max(90),
+  lon: z.coerce.number().min(-180).max(180)
+}).strict();
+
+export interface CheckFavoriteRequest {
+  lat: number;
+  lon: number;
+}
+
+export interface CheckFavoriteResponse {
+  isFavorite: boolean;
+}
+
+export const checkFavoriteEndpoint = createEndpointStrict<CheckFavoriteRequest, CheckFavoriteResponse>((validate, data) => ({
+  path: '/favorites/check',
+  method: 'get',
+  auth: AuthType.Basic,
+  validator: checkFavoriteSchema,
+  handler: async (req, _res) => {
+    const requestData = data(req.query);
     
     const favoritesService = new FavoritesService();
-    const isFavorite = await favoritesService.isFavorite(req.userId!, latitude, longitude);
+    const isFavorite = await favoritesService.isFavorite(req.auth!.userId!, requestData.lat, requestData.lon);
     
-    res.json({ success: true, data: { isFavorite } });
-  } catch (error) {
-    console.error('Check favorite error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    return validate({ isFavorite });
   }
-};
+}));

@@ -32,7 +32,7 @@ export interface FavoritesState {
   error: string | null
 }
 
-const API_BASE_URL = 'http://localhost:3001/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')
@@ -46,7 +46,7 @@ export const addFavorite = createAsyncThunk<FavoriteCity, AddFavoriteRequest>(
   'favorites/add',
   async (favoriteData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/favorites`, {
+      const response = await fetch(`${API_BASE_URL}/api/favorites`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(favoriteData),
@@ -69,7 +69,7 @@ export const removeFavorite = createAsyncThunk<string, string>(
   'favorites/remove',
   async (favoriteId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/favorites/${favoriteId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/favorites/${favoriteId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
@@ -91,7 +91,7 @@ export const fetchFavorites = createAsyncThunk<FavoriteCity[], void>(
   'favorites/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/favorites`, {
+      const response = await fetch(`${API_BASE_URL}/api/favorites`, {
         headers: getAuthHeaders(),
       })
 
@@ -112,7 +112,7 @@ export const checkIsFavorite = createAsyncThunk<boolean, { lat: number; lon: num
   'favorites/check',
   async ({ lat, lon }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/favorites/check?lat=${lat}&lon=${lon}`, {
+      const response = await fetch(`${API_BASE_URL}/api/favorites/check?lat=${lat}&lon=${lon}`, {
         headers: getAuthHeaders(),
       })
 
@@ -123,6 +123,37 @@ export const checkIsFavorite = createAsyncThunk<boolean, { lat: number; lon: num
       }
 
       return data.data.isFavorite
+    } catch (error) {
+      return rejectWithValue('Network error')
+    }
+  }
+)
+
+export const removeFavoriteByCoordinates = createAsyncThunk<string, { lat: number; lon: number }>(
+  'favorites/removeByCoordinates',
+  async ({ lat, lon }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { favorites: FavoritesState }
+      const favorite = state.favorites.favorites.find(
+        fav => Math.abs(fav.latitude - lat) < 0.001 && Math.abs(fav.longitude - lon) < 0.001
+      )
+      
+      if (!favorite) {
+        return rejectWithValue('Favorite not found')
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/favorites/${favorite.id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        return rejectWithValue(data.error || 'Failed to remove favorite')
+      }
+
+      return favorite.id
     } catch (error) {
       return rejectWithValue('Network error')
     }
@@ -188,6 +219,19 @@ const favoritesSlice = createSlice({
         state.error = action.payload as string
       })
       .addCase(checkIsFavorite.rejected, (state, action) => {
+        state.error = action.payload as string
+      })
+      .addCase(removeFavoriteByCoordinates.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(removeFavoriteByCoordinates.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.favorites = state.favorites.filter(fav => fav.id !== action.payload)
+        state.error = null
+      })
+      .addCase(removeFavoriteByCoordinates.rejected, (state, action) => {
+        state.isLoading = false
         state.error = action.payload as string
       })
   },

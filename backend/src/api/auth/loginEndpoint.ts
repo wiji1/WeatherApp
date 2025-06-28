@@ -1,37 +1,38 @@
-import {Request, Response} from 'express';
-import {z} from 'zod';
-import {AuthService} from '../../services/AuthService';
+import {AuthType, createEndpointStrict} from "../types";
+import {z} from "zod";
+import {AuthService} from "../../services/AuthService";
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(1, 'Password is required')
-});
+}).strict();
 
-export const loginEndpoint = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const validatedData = loginSchema.parse(req.body);
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: Date;
+  };
+  token: string;
+}
+
+export const loginEndpoint = createEndpointStrict<LoginRequest, LoginResponse>((validate, data) => ({
+  path: '/auth/login',
+  method: 'post',
+  auth: AuthType.None,
+  validator: loginSchema,
+  handler: async (req, _res) => {
+    const requestData = data(req.body);
     
     const authService = new AuthService();
-    const result = await authService.login(validatedData);
+    const result = await authService.login(requestData);
     
-    res.json(result);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ 
-        error: 'Validation error', 
-        details: error.errors 
-      });
-      return;
-    }
-    
-    if (error instanceof Error) {
-      if (error.message === 'Invalid credentials') {
-        res.status(401).json({ error: error.message });
-        return;
-      }
-    }
-    
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return validate(result);
   }
-};
+}));

@@ -172,19 +172,21 @@ export const FavoritesGallery: React.FC = () => {
         )}
 
         {/* Main Card Display */}
-        <div 
-          className="flex justify-center touch-pan-y"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="w-full max-w-sm transition-all duration-300 ease-in-out transform">
-            <FavoriteCard
-              key={favorites[currentIndex].id}
-              favorite={favorites[currentIndex]}
-            />
+        {favorites[currentIndex] && (
+          <div 
+            className="flex justify-center touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className="w-full max-w-sm transition-all duration-300 ease-in-out transform">
+              <FavoriteCard
+                key={favorites[currentIndex].id}
+                favorite={favorites[currentIndex]}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Dots Indicator */}
         {favorites.length > 1 && (

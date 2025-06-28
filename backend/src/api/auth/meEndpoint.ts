@@ -1,20 +1,33 @@
-import {Response} from 'express';
-import {AuthenticatedRequest} from '../../middleware/auth';
-import {AuthService} from '../../services/AuthService';
+import {AuthType, createEndpointStrict} from "../types";
+import {z} from "zod";
+import {AuthService} from "../../services/AuthService";
 
-export const meEndpoint = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
+const meSchema = z.object({}).strict();
+
+export interface MeRequest {}
+
+export interface MeResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: Date;
+  };
+}
+
+export const meEndpoint = createEndpointStrict<MeRequest, MeResponse>((validate, data) => ({
+  path: '/auth/me',
+  method: 'get',
+  auth: AuthType.Basic,
+  validator: meSchema,
+  handler: async (req, _res) => {
     const authService = new AuthService();
-    const user = await authService.getUserById(req.userId!);
+    const user = await authService.getUserById(req.auth!.userId!);
     
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
+      throw new Error('User not found');
     }
     
-    res.json({ user });
-  } catch (error) {
-    console.error('Me endpoint error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return validate({ user });
   }
-};
+}));

@@ -95,7 +95,6 @@ export class FavoritesService {
             }
           };
         } catch (error) {
-          // If weather fetch fails, return favorite without weather data
           return favorite;
         }
       })

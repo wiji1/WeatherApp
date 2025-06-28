@@ -11,20 +11,20 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
 app.use(ApiManager.getInstance().getRouter());
 
-// Initialize database tables
 async function startServer() {
+  const server = app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+
   try {
     const db = MySQLDatabase.getInstance();
     await db.initializeTables();
-    
-    app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-    });
+    console.log('Database initialized successfully');
   } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+    console.error('Database initialization failed:', error);
   }
 }
 

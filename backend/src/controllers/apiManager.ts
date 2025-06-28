@@ -1,16 +1,17 @@
 import express, {NextFunction, Request, RequestHandler, Response, Router} from 'express';
-import {ApiEndpoint, ApiRequest, ApiResponse} from '../api/types';
+import {ApiEndpoint, ApiRequest, ApiResponse, AuthType} from '../api/types';
 import {getWeatherEndpoint} from "../api/weather/getWeatherEndpoint";
 import {searchCitiesEndpoint} from "../api/weather/searchCitiesEndpoint";
 import {getWeatherByCoordinatesEndpoint} from "../api/weather/getWeatherByCoordinatesEndpoint";
 import {registerEndpoint} from "../api/auth/registerEndpoint";
 import {loginEndpoint} from "../api/auth/loginEndpoint";
 import {meEndpoint} from "../api/auth/meEndpoint";
-import {authenticateToken} from "../middleware/auth";
+import {AuthService} from "../services/AuthService";
 import {addFavoriteEndpoint} from "../api/favorites/addFavoriteEndpoint";
 import {removeFavoriteEndpoint} from "../api/favorites/removeFavoriteEndpoint";
 import {getFavoritesEndpoint} from "../api/favorites/getFavoritesEndpoint";
 import {checkFavoriteEndpoint} from "../api/favorites/checkFavoriteEndpoint";
+import {healthEndpoint} from "../api/health/healthEndpoint";
 
 export default class ApiManager {
     private static instance: ApiManager;
@@ -24,20 +25,17 @@ export default class ApiManager {
     }
 
     private registerEndpoints() {
+        this.addEndpoint(healthEndpoint);
         this.addEndpoint(getWeatherEndpoint);
         this.addEndpoint(searchCitiesEndpoint);
         this.addEndpoint(getWeatherByCoordinatesEndpoint);
-        
-        // Auth endpoints
-        this.router.post('/api/auth/register', registerEndpoint);
-        this.router.post('/api/auth/login', loginEndpoint);
-        this.router.get('/api/auth/me', authenticateToken, meEndpoint);
-        
-        // Favorites endpoints
-        this.router.post('/api/favorites', authenticateToken, addFavoriteEndpoint);
-        this.router.delete('/api/favorites/:favoriteId', authenticateToken, removeFavoriteEndpoint);
-        this.router.get('/api/favorites', authenticateToken, getFavoritesEndpoint);
-        this.router.get('/api/favorites/check', authenticateToken, checkFavoriteEndpoint);
+        this.addEndpoint(registerEndpoint);
+        this.addEndpoint(loginEndpoint);
+        this.addEndpoint(meEndpoint);
+        this.addEndpoint(addFavoriteEndpoint);
+        this.addEndpoint(removeFavoriteEndpoint);
+        this.addEndpoint(getFavoritesEndpoint);
+        this.addEndpoint(checkFavoriteEndpoint);
     }
 
     private setupMiddleware() {
@@ -75,13 +73,11 @@ export default class ApiManager {
 
         const handlers: RequestHandler[] = [];
 
-        //TODO: Add authentication handlers here
-
-        // if (endpoint.auth === AuthType.Basic) {
-        //     handlers.push(handleBasicAuth);
-        // } else if (endpoint.auth === AuthType.Admin) {
-        //     handlers.push(handleAdminAuth);
-        // }
+        if (endpoint.auth === AuthType.Basic) {
+            handlers.push(this.handleBasicAuth);
+        } else if (endpoint.auth === AuthType.Admin) {
+            handlers.push(this.handleAdminAuth);
+        }
 
         const wrappedHandler: RequestHandler = async (
             req: Request,
@@ -111,6 +107,36 @@ export default class ApiManager {
         this.router[endpoint.method](apiPath, ...handlers);
         console.log(`registered api endpoint: ${endpoint.method.toUpperCase()} ${apiPath}`);
     }
+
+    private handleBasicAuth: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+            res.status(401).json({ success: false, error: 'Access token required' });
+            return;
+        }
+
+        const authService = new AuthService();
+        const decoded = authService.verifyToken(token);
+
+        if (!decoded) {
+            res.status(403).json({ success: false, error: 'Invalid or expired token' });
+            return;
+        }
+
+        const typedReq = req as ApiRequest<any>;
+        typedReq.auth = {
+            authId: decoded.userId,
+            userId: decoded.userId
+        };
+        next();
+    };
+
+    private handleAdminAuth: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+        // TODO: Implement admin auth logic
+        res.status(501).json({ success: false, error: 'Admin auth not implemented' });
+    };
 
     getRouter(): Router {
         return this.router;
