@@ -21,7 +21,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const [checkingFavorite, setCheckingFavorite] = useState(false)
   
   const dispatch = useAppDispatch()
-  const { isLoading } = useAppSelector((state) => state.favorites)
+  const { isLoading, favorites } = useAppSelector((state) => state.favorites)
   const { isAuthenticated } = useAppSelector((state) => state.auth)
 
   useEffect(() => {
@@ -34,6 +34,15 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         .finally(() => setCheckingFavorite(false))
     }
   }, [coordinates, dispatch, isAuthenticated, showStar])
+
+  useEffect(() => {
+    if (coordinates && isAuthenticated && showStar) {
+      const isFavoriteInList = favorites.some(
+        fav => Math.abs(fav.latitude - coordinates.lat) < 0.001 && Math.abs(fav.longitude - coordinates.lon) < 0.001
+      )
+      setIsFavorite(isFavoriteInList)
+    }
+  }, [favorites, coordinates, isAuthenticated, showStar])
 
   const handleStarClick = async () => {
     if (!coordinates) return
